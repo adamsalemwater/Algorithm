@@ -18,20 +18,19 @@ public class Solver {
     private int [][] clauseDatabase = null;
     private int numberOfVariables = 0;
     
-    /* You answers go below here */
+    /* Your  answers go below here */
 
     // Part A.1
     // Worst case complexity : O(v) as you must go through the whole array as the other literals gave unsatisfiable assignments.
     // Best case complexity : O(1) as the best case assumes the first literal is true and so there is no need to go through the whole array.
     public boolean checkClause(int[] assignment, int[] clause) {
-	 for (int i=0; i<clause.length; i++) {
-		 int clauseElement = clause[i];
-		 int assignmentElement = assignment[clauseElement];
-		 if ((clauseElement > 0 && (assignmentElement == 1)) || ((clauseElement < 0 && (assignmentElement == -1)))) {
-			 return true;
-		 }
-	 }
-	 return false;
+		for (int element: clause) {
+			int assignmentElement = assignment[Math.abs(element)];
+			if ((element > 0 && (assignmentElement == 1)) || ((element < 0 && (assignmentElement == -1)))) {
+				return true;
+			}
+		}
+		return false;
     }
 
     // Part A.2
@@ -51,20 +50,51 @@ public class Solver {
 
 	// if one literal is true, then the clause is satisfiable.
 	// if all literals are false, then the clause is unsatisfiable.
-	// if all literals are unknown or the literals are mixed with unkowns and falses, then the clause should ouput 0 (unknown assignment).
+	// if all literals are unknown or the literals are mixed with unknowns and "falses" or unknowns, then the clause should output 0 (unknown assignment).
 
     // Part A.3
-    // Worst case complexity : ???
-    // Best case complexity : ???
+    // Worst case complexity : O(v) because we assume that the worst case is when we have to go through all the literals to attain either satisfiable, unsatisfiable or unknown clause.
+    // Best case complexity : O(1) because it occurs when the first literal within the clause is either assigned an unknown or outputs true.
     public int checkClausePartial(int[] partialAssignment, int[] clause) {
-	return 0;
+		int numberUnknowns = 0;
+		for (int c : clause) {
+			int clauseAssignment = partialAssignment[Math.abs(c)];
+			if ((c > 0 && clauseAssignment == 1) || (c < 0 && clauseAssignment == -1)) {
+				return 1;
+			}
+			if (clauseAssignment == 0) {
+				numberUnknowns++;
+			}
+		}
+		if (numberUnknowns > 0) {
+			return 0;
+		}
+		return -1;
     }
 
     // Part A.4
     // Worst case complexity : ???
     // Best case complexity : ???
-    public int findUnit(int[] partialAssignment, int[] clause) {
-	return 0;
+
+	// Question for tutor. If the unknown literal is a negation of the original literal, should I return the negation of the literal or the literal itself.
+	// e.g. If the unknown is -3 (negation of 3), should I return -3 or 3?
+    public static int findUnit(int[] partialAssignment, int[] clause) {
+		int numberUnknowns = 0;
+		int	unknownLiteral = 0;
+		for (int c: clause) {
+			int clauseAssignment = partialAssignment[Math.abs(c)];
+			if ((c > 0 && clauseAssignment == 1) || (c < 0 && clauseAssignment == -1)) {
+				return 0;
+			}
+			if (clauseAssignment == 0) {
+				numberUnknowns++;
+				unknownLiteral = c;
+			}
+		}
+		if (numberUnknowns == 1) {
+			return unknownLiteral;
+		}
+		return 0;
     }
 
     // Part B
@@ -80,6 +110,13 @@ public class Solver {
     \*****************************************************************/
     
     public static void main(String[] args) {
+
+		int[] clause = {1,2,-3,4};
+		int[] assignment = {0,-1, -1, 0, -1};
+
+		System.out.println(findUnit(assignment, clause));
+
+
 	try {
 	    Solver mySolver = new Solver();
 
