@@ -73,8 +73,8 @@ public class Solver {
     }
 
     // Part A.4
-    // Worst case complexity : ???
-    // Best case complexity : ???
+    // Worst case complexity : O(v) as the compiler must loop through the whole array to check if there is only one unknown (unknown assignment can be found all the way at the end).
+    // Best case complexity : O(1) for when the first literal gives a satisfiable argument.
 
 	// Question for tutor. If the unknown literal is a negation of the original literal, should I return the negation of the literal or the literal itself.
 	// e.g. If the unknown is -3 (negation of 3), should I return -3 or 3?
@@ -100,9 +100,47 @@ public class Solver {
     // Part B
     // I think this can solve ????    
     int[] checkSat(int[][] clauseDatabase) {
-	return null;
-    }
 
+		if (clauseDatabase.length < 2) {
+			return null;
+		}
+
+		// find the length of the empty assignment by finding the maximum number in the clause database
+		int[] assignment;
+
+		int lengthAssignment = 0;
+		int lengthClause = 0;
+		for (int[] clause : clauseDatabase) {
+			for (int c : clause) {
+				if (Math.abs(c) > lengthAssignment) {
+					lengthAssignment = Math.abs(c) + 1;
+				}
+				lengthClause = clause.length;
+			}
+		}
+		assignment = new int[lengthAssignment + 1];
+		assignment[0] = 0;
+
+
+		// split apart database until we get a clause database with only one clause inside
+
+		int pivot = clauseDatabase.length / 2;
+		int[][] leftIndex = new int[pivot][lengthClause];
+		int[][] rightIndex = new int[clauseDatabase.length - pivot][lengthClause];
+
+		for (int i=0; i<leftIndex.length; i++) {
+			leftIndex[i][i] = clauseDatabase[i][i];
+		}
+
+		for (int i=pivot; i<rightIndex.length; i++) {
+			rightIndex[i-pivot][i-pivot] = clauseDatabase[i][i-pivot];
+		}
+
+		checkSat(leftIndex);
+		checkSat(rightIndex);
+
+
+	}
     /*****************************************************************\
     *** DO NOT CHANGE! DO NOT CHANGE! DO NOT CHANGE! DO NOT CHANGE! ***
     *******************************************************************
@@ -111,10 +149,6 @@ public class Solver {
     
     public static void main(String[] args) {
 
-		int[] clause = {1,2,-3,4};
-		int[] assignment = {0,-1, -1, 0, -1};
-
-		System.out.println(findUnit(assignment, clause));
 
 
 	try {
