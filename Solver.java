@@ -8,10 +8,12 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.*;
+
 
 public class Solver {
 
@@ -76,8 +78,6 @@ public class Solver {
     // Worst case complexity : O(v) as the compiler must loop through the whole array to check if there is only one unknown (unknown assignment can be found all the way at the end).
     // Best case complexity : O(1) for when the first literal gives a satisfiable argument.
 
-	// Question for tutor. If the unknown literal is a negation of the original literal, should I return the negation of the literal or the literal itself.
-	// e.g. If the unknown is -3 (negation of 3), should I return -3 or 3?
     public int findUnit(int[] partialAssignment, int[] clause) {
 		int numberUnknowns = 0;
 		int	unknownLiteral = 0;
@@ -101,9 +101,11 @@ public class Solver {
     // I think this can solve ????    
     int[] checkSat(int[][] clauseDatabase) {
 
+
 		int[] assignment;
 		int lengthAssignment = 0;
 
+		// find maximum number to get array length and add one for the 0th element
 		for (int[] clause : clauseDatabase) {
 			for (int c : clause) {
 				if (Math.abs(c) > lengthAssignment) {
@@ -111,56 +113,59 @@ public class Solver {
 				}
 			}
 		}
+
+
 		assignment = new int[lengthAssignment + 1];
 		assignment[0] = 0;
 
+		// find the number of times a literal is reassigned a truth value so that we only change its value once
 
+		int assignOnce = 0;
+		HashMap<Integer, Integer> assignmentMap = new HashMap<>();
 
-
-
-
-	}
-
-	public void split(int[][] clauseDatabase) {
-
-		int[][] trueDatabase;
-		int[][] falseDatabase;
-
-		int numberOfTrue = 0,numberOfFalse = 0;
-
-		int[] assignment;
-		int lengthAssignment = 0;
-
-		for (int[] clause : clauseDatabase) {
-			for (int c : clause) {
-				if (Math.abs(c) > lengthAssignment) {
-					lengthAssignment = Math.abs(c);
-				}
-			}
+		for (int i=0; i<lengthAssignment; i++) {
+			assignmentMap.put(assignment[i], assignOnce);
 		}
-		assignment = new int[lengthAssignment + 1];
-		assignment[0] = 0;
 
 
 		for (int i=0; i<clauseDatabase.length; i++) {
 			for (int j=0; j<clauseDatabase[i].length; j++) {
-				if (clauseDatabase[i][j] > 0) {
-					assignment[Math.abs(clauseDatabase[i][j])] = 1;
-				} else {
-					assignment[Math.abs(clauseDatabase[i][j])] = -1;
+					if (findUnit(assignment, clauseDatabase[i]) != 0) {
+						if (clauseDatabase[i][j] > 0) {
+							assignment[Math.abs(clauseDatabase[i][j])] = 1;
+						} else {
+							assignment[Math.abs(clauseDatabase[i][j])] = -1;
+						}
+					}
+					for (int truthValue = -1; truthValue <= 1; truthValue += 2) {
+						assignment[Math.abs(clauseDatabase[i][j])] = truthValue;
+						if (checkAllConditions(assignment, clauseDatabase[i])) {
+							if (checkClauseDatabase(assignment, clauseDatabase)) {
+								return assignment;
+							}
+						}
+						checkSat(clauseDatabase);
+					}
 				}
-				if (checkClause(assignment, clauseDatabase[i])) {
-					numberOfTrue++;
-				} else {
-					numberOfFalse++;
-				}
-				trueDatabase = new int[numberOfTrue][];
-				falseDatabase = new int[numberOfFalse][];
+				return null;
 			}
+		return assignment;
+
+	}
+
+	public boolean checkAllConditions(int[] assignment, int[] clause) {
+		if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
-    /*****************************************************************\
+
+
+
+
+	/*****************************************************************\
     *** DO NOT CHANGE! DO NOT CHANGE! DO NOT CHANGE! DO NOT CHANGE! ***
     *******************************************************************
     *********** Do not change anything below this comment! ************
