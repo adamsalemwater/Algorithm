@@ -124,24 +124,24 @@ public class Solver {
 
         HashSet<Integer> literalSet = new HashSet<>();
 
-
         for (int i = 0; i < clauseDatabase.length; i++) {
             for (int j = 0; j < clauseDatabase[i].length; j++) {
                 if (findUnit(assignment, clauseDatabase[i]) != 0) {
-                    if (clauseDatabase[i][j] > 0) {
+                    int literal = findUnit(assignment, clauseDatabase[i]);
+                    if (literal > 0) {
                         assignment[Math.abs(clauseDatabase[i][j])] = 1;
                     } else {
                         assignment[Math.abs(clauseDatabase[i][j])] = -1;
                     }
+                    literalSet.add(Math.abs(literal));
                 }
-                if (!alreadyAssigned(literalSet, Math.abs(clauseDatabase[i][j]))) {
-                    for (int truthValue = -1; truthValue <= 1; truthValue += 2) {
-                        assignment[Math.abs(clauseDatabase[i][j])] = truthValue;
-                        if (checkAllConditions(assignment, clauseDatabase[i])) {
-                            literalSet.add(Math.abs(clauseDatabase[i][j]));
-                        }
-                    }
+                assignment[Math.abs(clauseDatabase[i][j])] = -1;
+                if (checkClause(assignment, clauseDatabase[i]) && !alreadyAssigned(literalSet, Math.abs(clauseDatabase[i][j]))) {
+                    literalSet.add(Math.abs(clauseDatabase[i][j]));
+                } else {
+                    assignment[Math.abs(clauseDatabase[i][j])] = 1;
                 }
+                
 
             }
             if (checkClauseDatabase(assignment, clauseDatabase)) {
@@ -152,11 +152,10 @@ public class Solver {
             System.out.println(a);
         }
         return assignment;
-
     }
 
-    public boolean checkAllConditions(int[] assignment, int[] clause) {
-        if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0) {
+    public boolean checkAllConditions(int[] assignment, int[] clause, HashSet<Integer> literalList, int literal) {
+        if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0 && !alreadyAssigned(literalList, literal)) {
             return true;
         } else {
             return false;
@@ -165,7 +164,7 @@ public class Solver {
 
     public boolean alreadyAssigned(HashSet<Integer> literalList, int literal) {
 
-        if (literalList.contains(literal)) {
+        if (literalList.contains(Math.abs(literal))) {
             return true;
         }
         return false;
