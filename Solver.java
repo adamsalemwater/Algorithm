@@ -124,50 +124,60 @@ public class Solver {
 
         HashSet<Integer> literalSet = new HashSet<>();
 
+
         for (int i = 0; i < clauseDatabase.length; i++) {
+            while (findUnit(assignment, clauseDatabase[i]) != 0) {
+                int literal = findUnit(assignment, clauseDatabase[i]);
+                assignment[Math.abs(literal)] = literal / Math.abs(literal);
+            }
             for (int j = 0; j < clauseDatabase[i].length; j++) {
-                if (findUnit(assignment, clauseDatabase[i]) != 0) {
-                    int literal = findUnit(assignment, clauseDatabase[i]);
-                    if (literal > 0) {
-                        assignment[Math.abs(clauseDatabase[i][j])] = 1;
-                    } else {
-                        assignment[Math.abs(clauseDatabase[i][j])] = -1;
-                    }
-                    literalSet.add(Math.abs(literal));
+                literalSet.add(clauseDatabase[i][j]);
+
+                if (pureLiteral(literalSet, clauseDatabase[i][j])) {
+                    assignment[Math.abs(clauseDatabase[i][j])] = clauseDatabase[i][j] / Math.abs(clauseDatabase[i][j]);
                 }
-                assignment[Math.abs(clauseDatabase[i][j])] = -1;
-                if (checkClause(assignment, clauseDatabase[i]) && !alreadyAssigned(literalSet, Math.abs(clauseDatabase[i][j]))) {
-                    literalSet.add(Math.abs(clauseDatabase[i][j]));
-                } else {
-                    assignment[Math.abs(clauseDatabase[i][j])] = 1;
-                }
+
                 
+                int assignNegative = -1;
+                int assignPositive = 1;
+
+                assignment[Math.abs(clauseDatabase[i][j])] = assignNegative;
+
+                if (checkClause(assignment, clauseDatabase[i])) {
+
+                }
+
+                assignment[Math.abs(clauseDatabase[i][j])] = assignPositive;
+
+                if (checkClause(assignment, clauseDatabase[i])) {
+
+                }
 
             }
-            if (checkClauseDatabase(assignment, clauseDatabase)) {
-                return assignment;
-            }
         }
+
         for (int a : assignment) {
             System.out.println(a);
         }
+
         return assignment;
     }
 
-    public boolean checkAllConditions(int[] assignment, int[] clause, HashSet<Integer> literalList, int literal) {
-        if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0 && !alreadyAssigned(literalList, literal)) {
+    public boolean pureLiteral(HashSet<Integer> literalSet, int literal) {
+
+        if (!literalSet.contains(-literal)) {
             return true;
         } else {
             return false;
         }
     }
 
-    public boolean alreadyAssigned(HashSet<Integer> literalList, int literal) {
-
-        if (literalList.contains(Math.abs(literal))) {
+    public boolean checkConditions(int[] assignment, int[] clause) {
+        if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
 
