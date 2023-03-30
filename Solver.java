@@ -126,9 +126,12 @@ public class Solver {
 
 
         for (int i = 0; i < clauseDatabase.length; i++) {
+            ArrayList<int[]> newClauseDatabase = new ArrayList<>();
+            newClauseDatabase.add(clauseDatabase[i]);
             while (findUnit(assignment, clauseDatabase[i]) != 0) {
                 int literal = findUnit(assignment, clauseDatabase[i]);
                 assignment[Math.abs(literal)] = literal / Math.abs(literal);
+                newClauseDatabase.remove(clauseDatabase[i]);
             }
             for (int j = 0; j < clauseDatabase[i].length; j++) {
                 literalSet.add(clauseDatabase[i][j]);
@@ -137,7 +140,8 @@ public class Solver {
                     assignment[Math.abs(clauseDatabase[i][j])] = clauseDatabase[i][j] / Math.abs(clauseDatabase[i][j]);
                 }
 
-                
+                assignment[Math.abs(clauseDatabase[i][j])] = 0;
+
                 int assignNegative = -1;
                 int assignPositive = 1;
 
@@ -146,6 +150,7 @@ public class Solver {
                 if (checkClause(assignment, clauseDatabase[i])) {
 
                 }
+
 
                 assignment[Math.abs(clauseDatabase[i][j])] = assignPositive;
 
