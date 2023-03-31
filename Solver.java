@@ -8,6 +8,7 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -100,15 +101,14 @@ public class Solver {
     // I think this can solve ????    
     int[] checkSat(int[][] clauseDatabase) {
 
-
         int[] assignment;
         int lengthAssignment = 0;
 
-        // find maximum number to get array length and add one for the 0th element
+        //  find maximum number to get array length and add one for the 0th element
         for (int[] clause : clauseDatabase) {
-            for (int c : clause) {
-                if (Math.abs(c) > lengthAssignment) {
-                    lengthAssignment = Math.abs(c);
+            for (int literal : clause) {
+                if (Math.abs(literal) > lengthAssignment) {
+                    lengthAssignment = Math.abs(literal);
                 }
             }
         }
@@ -117,6 +117,10 @@ public class Solver {
         assignment = new int[lengthAssignment + 1];
         assignment[0] = 0;
 
+        if (checkClauseDatabase(assignment, clauseDatabase)) {
+            return assignment;
+        }
+
 		/* create an empty hashset and whenever we assign a truth value to a literal, we add it on
 		to the set. When we loop through we check if it has already been assigned to prevent reassignment
 		of a literal
@@ -124,61 +128,123 @@ public class Solver {
 
         HashSet<Integer> literalSet = new HashSet<>();
 
+        ArrayList<int[]> newClauseDatabase = new ArrayList<>();
+
 
         for (int i = 0; i < clauseDatabase.length; i++) {
-            ArrayList<int[]> newClauseDatabase = new ArrayList<>();
             newClauseDatabase.add(clauseDatabase[i]);
-            while (findUnit(assignment, clauseDatabase[i]) != 0) {
-                int literal = findUnit(assignment, clauseDatabase[i]);
-                assignment[Math.abs(literal)] = literal / Math.abs(literal);
-                newClauseDatabase.remove(clauseDatabase[i]);
-            }
             for (int j = 0; j < clauseDatabase[i].length; j++) {
                 literalSet.add(clauseDatabase[i][j]);
+            }
+
+        }
+
+        for (int i = 0; i < clauseDatabase.length; i++) {
+            for (int j = 0; j < clauseDatabase[i].length; j++) {
+
+                // check if there are any unit clauses and assign the truth value to it
+
+                if (findUnit(assignment, clauseDatabase[i]) != 0) {
+                    int literal = findUnit(assignment, clauseDatabase[i]);
+                    assignment[Math.abs(literal)] = literal / Math.abs(literal);
+                    newClauseDatabase.remove(clauseDatabase[i]);
+                }
+
+                // check if a literal is pure (either positive or negative in the whole database
 
                 if (pureLiteral(literalSet, clauseDatabase[i][j])) {
                     assignment[Math.abs(clauseDatabase[i][j])] = clauseDatabase[i][j] / Math.abs(clauseDatabase[i][j]);
                 }
 
-                assignment[Math.abs(clauseDatabase[i][j])] = 0;
+                int unassignedLiteral = emptyAssignment(assignment);
 
-                int assignNegative = -1;
-                int assignPositive = 1;
-
-                assignment[Math.abs(clauseDatabase[i][j])] = assignNegative;
-
-                if (checkClause(assignment, clauseDatabase[i])) {
-
+                if (unassignedLiteral == 0) {
+                    return null;
                 }
 
+                /* the unassigned literal will now be branched off into 1 or -1 and until
+                 a conflict is found or the clause database is satisfiable, then we continue
+                 with a recursion */
 
-                assignment[Math.abs(clauseDatabase[i][j])] = assignPositive;
-
-                if (checkClause(assignment, clauseDatabase[i])) {
-
+                assignment[unassignedLiteral] = 1;
+                newClauseDatabase = branch(newClauseDatabase, assignment);
+                int[] result = checkSat((int[][]) newClauseDatabase.toArray());
+                if (result != null) {
+                    return result;
                 }
 
+                assignment[unassignedLiteral] = -1;
+                newClauseDatabase = branch(newClauseDatabase, assignment);
+                result = checkSat((int[][]) newClauseDatabase.toArray());
+                if (result != null) {
+                    return result;
+                }
+
+                assignment[unassignedLiteral] = 0;
             }
         }
 
         for (int a : assignment) {
             System.out.println(a);
         }
-
         return assignment;
     }
+
+
+    /* We have checked for pure literals and any unit clauses.
+       Now is the time to code the recursive part where we add
+    */
+    public ArrayList<int[]> branch(ArrayList<int[]> clauseDatabase, int[] assignment) {
+        ArrayList<int[]> newClauseDatabase = new ArrayList<>();
+        for (int[] clause : clauseDatabase) {
+            boolean clauseSatisfied = false;
+            int unassignedVariable = 0;
+            for (int literal : clause) {
+                int variable = Math.abs(literal);
+                if (assignment[variable] == 0) {
+                    if (unassignedVariable == 0) {
+                        unassignedVariable = variable;
+                    } else {
+                        unassignedVariable = -1;
+                        break;
+                    }
+                } else if (literal > 0 && assignment[variable] == 1 || literal < 0 && assignment[variable] == -1) {
+                    clauseSatisfied = true;
+                    break;
+                }
+            }
+            if (unassignedVariable == 0 && !clauseSatisfied) {
+                // This clause is unsatisfiable with the current assignment.
+                return null;
+            } else if (unassignedVariable > 0) {
+                // Add a new clause with the negation of the unassigned variable.
+                int[] newClause = new int[1];
+                newClause[0] = -1 * unassignedVariable;
+                newClauseDatabase.add(newClause);
+            } else {
+                // The clause is either satisfied or already contains the negation of all unassigned variables.
+                newClauseDatabase.add(clause);
+            }
+        }
+        return newClauseDatabase;
+
+    }
+
+
+    public int emptyAssignment(int[] assignment) {
+
+        for (int i = 1; i < assignment.length; i++) {
+            if (assignment[i] == 0) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
 
     public boolean pureLiteral(HashSet<Integer> literalSet, int literal) {
 
         if (!literalSet.contains(-literal)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean checkConditions(int[] assignment, int[] clause) {
-        if (checkClause(assignment, clause) && checkClausePartial(assignment, clause) == 0) {
             return true;
         } else {
             return false;
